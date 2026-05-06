@@ -1,0 +1,227 @@
+version: '3.8'
+
+services:
+  # ============================================================
+  # Infrastructure
+  # ============================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: finflow-postgres
+    environment:
+      POSTGRES_USER: finflow
+      POSTGRES_PASSWORD: finflow123
+      POSTGRES_DB: finflow_accounts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/setup-databases.sql:/docker-entrypoint-initdb.d/01-setup-databases.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finflow-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: finflow-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - finflow-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: finflow-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - finflow-network
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: finflow-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      echo 'Creating Kafka topics...'
+      kafka-topics --create --if-not-exists --topic finflow.transfers.initiated --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.transfers.completed --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.transfers.failed --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.transfers.reversed --partitions 1 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.accounts.blocked --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.accounts.debited --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      kafka-topics --create --if-not-exists --topic finflow.accounts.credited --partitions 3 --replication-factor 1 --bootstrap-server kafka:29092
+      echo 'Topics created successfully!'
+      "
+    networks:
+      - finflow-network
+
+  # ============================================================
+  # Microservices
+  # ============================================================
+
+  finflow-accounts:
+    build:
+      context: ./finflow-accounts
+      dockerfile: Dockerfile
+    container_name: finflow-accounts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+      - "9081:9081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finflow_accounts
+      SPRING_DATASOURCE_USERNAME: finflow
+      SPRING_DATASOURCE_PASSWORD: finflow123
+    networks:
+      - finflow-network
+
+  finflow-transfers:
+    build:
+      context: ./finflow-transfers
+      dockerfile: Dockerfile
+    container_name: finflow-transfers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+      - "9082:9082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finflow_transfers
+      SPRING_DATASOURCE_USERNAME: finflow
+      SPRING_DATASOURCE_PASSWORD: finflow123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      GRPC_CLIENT_FINFLOW_ACCOUNTS_ADDRESS: static://finflow-accounts:9081
+      GRPC_CLIENT_FINFLOW_VALIDATION_ADDRESS: static://finflow-validation:9083
+    networks:
+      - finflow-network
+
+  finflow-validation:
+    build:
+      context: ./finflow-validation
+      dockerfile: Dockerfile
+    container_name: finflow-validation
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+      - "9083:9083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finflow_validation
+      SPRING_DATASOURCE_USERNAME: finflow
+      SPRING_DATASOURCE_PASSWORD: finflow123
+    networks:
+      - finflow-network
+
+  finflow-audit:
+    build:
+      context: ./finflow-audit
+      dockerfile: Dockerfile
+    container_name: finflow-audit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finflow_audit
+      SPRING_DATASOURCE_USERNAME: finflow
+      SPRING_DATASOURCE_PASSWORD: finflow123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    networks:
+      - finflow-network
+
+  finflow-notifications:
+    build:
+      context: ./finflow-notifications
+      dockerfile: Dockerfile
+    container_name: finflow-notifications
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finflow_notifications
+      SPRING_DATASOURCE_USERNAME: finflow
+      SPRING_DATASOURCE_PASSWORD: finflow123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      NOTIFICATIONS_ENABLED: "false"
+    networks:
+      - finflow-network
+
+  finflow-gateway:
+    build:
+      context: ./finflow-gateway
+      dockerfile: Dockerfile
+    container_name: finflow-gateway
+    depends_on:
+      - finflow-accounts
+      - finflow-transfers
+      - finflow-audit
+      - finflow-notifications
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://finflow-accounts:8081
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://finflow-transfers:8082
+      SPRING_CLOUD_GATEWAY_ROUTES_2_URI: http://finflow-audit:8084
+      SPRING_CLOUD_GATEWAY_ROUTES_3_URI: http://finflow-notifications:8085
+    networks:
+      - finflow-network
+
+  finflow-ui:
+    build:
+      context: ./finflow-ui
+      dockerfile: Dockerfile
+    container_name: finflow-ui
+    depends_on:
+      - finflow-gateway
+    ports:
+      - "3000:80"
+    networks:
+      - finflow-network
+
+networks:
+  finflow-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

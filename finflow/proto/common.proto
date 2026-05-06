@@ -1,0 +1,151 @@
+// ============================================================
+// FinFlow - Tipos Comunes para gRPC
+// Compartidos entre todos los servicios
+// ============================================================
+
+syntax = "proto3";
+
+package finflow.common;
+
+option java_multiple_files = true;
+option java_package = "ec.com.finflow.grpc.common";
+option java_outer_classname = "CommonProto";
+
+import "google/protobuf/timestamp.proto";
+
+// ============================================================
+// Tipos de Moneda
+// ============================================================
+enum Currency {
+    CURRENCY_UNSPECIFIED = 0;
+    USD = 1;  // Dólar estadounidense
+    EUR = 2;  // Euro
+    // Añadir más según necesidad
+}
+
+// ============================================================
+// Estados de Cuenta
+// ============================================================
+enum AccountStatus {
+    ACCOUNT_STATUS_UNSPECIFIED = 0;
+    ACTIVE = 1;      // Cuenta activa y operativa
+    INACTIVE = 2;    // Cuenta inactiva (no puede operar)
+    BLOCKED = 3;     // Cuenta bloqueada por seguridad/fraude
+    CLOSED = 4;      // Cuenta cerrada permanentemente
+}
+
+// ============================================================
+// Tipos de Cuenta
+// ============================================================
+enum AccountType {
+    ACCOUNT_TYPE_UNSPECIFIED = 0;
+    CHECKING = 1;    // Cuenta corriente
+    SAVINGS = 2;     // Cuenta de ahorros
+    BUSINESS = 3;    // Cuenta empresarial
+}
+
+// ============================================================
+// Estados de Transferencia
+// ============================================================
+enum TransferStatus {
+    TRANSFER_STATUS_UNSPECIFIED = 0;
+    PENDING = 1;        // Transferencia creada, pendiente de validación
+    VALIDATING = 2;     // En proceso de validación anti-fraude
+    PROCESSING = 3;     // Validación OK, ejecutando débito/crédito
+    COMPLETED = 4;      // Transferencia completada exitosamente
+    FAILED = 5;         // Transferencia fallida
+    REVERSED = 6;       // Transferencia revertida (compensating transaction)
+    CANCELLED = 7;      // Cancelada por el usuario antes de procesar
+}
+
+// ============================================================
+// Razones de Rechazo de Validación
+// ============================================================
+enum RejectionReason {
+    REJECTION_REASON_UNSPECIFIED = 0;
+
+    // Errores de cuenta
+    SOURCE_ACCOUNT_NOT_FOUND = 1;
+    SOURCE_ACCOUNT_INACTIVE = 2;
+    SOURCE_ACCOUNT_BLOCKED = 3;
+    TARGET_ACCOUNT_NOT_FOUND = 4;
+    TARGET_ACCOUNT_INACTIVE = 5;
+    TARGET_ACCOUNT_BLOCKED = 6;
+
+    // Errores de saldo
+    INSUFFICIENT_FUNDS = 10;
+    INSUFFICIENT_AVAILABLE_BALANCE = 11;
+
+    // Límites excedidos
+    AMOUNT_EXCEEDS_TRANSFER_LIMIT = 20;
+    DAILY_LIMIT_EXCEEDED = 21;
+    MONTHLY_LIMIT_EXCEEDED = 22;
+    TRANSFERS_PER_HOUR_EXCEEDED = 23;
+
+    // Fraude
+    BLACKLISTED_ACCOUNT = 30;
+    SUSPICIOUS_ACTIVITY = 31;
+    UNUSUAL_AMOUNT = 32;
+    UNUSUAL_TIME = 33;
+    HIGH_FRAUD_SCORE = 34;
+
+    // Otros
+    SAME_ACCOUNT_TRANSFER = 40;
+    INVALID_CURRENCY = 41;
+    SYSTEM_ERROR = 99;
+}
+
+// ============================================================
+// Respuesta de Error Estándar
+// ============================================================
+message ErrorDetail {
+    string code = 1;           // Código de error (ej: "INSUFFICIENT_FUNDS")
+    string message = 2;        // Mensaje legible
+    string field = 3;          // Campo que causó el error (si aplica)
+    map<string, string> metadata = 4;  // Información adicional
+}
+
+// ============================================================
+// Información de Dinero (Amount + Currency)
+// ============================================================
+message Money {
+    // Monto en la menor unidad de la moneda (centavos para USD)
+    // Ej: $100.50 = 10050 centavos
+    int64 amount_minor_units = 1;
+
+    // Monto como string para precisión decimal (alternativo)
+    // Ej: "100.50"
+    string amount_decimal = 2;
+
+    Currency currency = 3;
+}
+
+// ============================================================
+// Metadata de Auditoría
+// ============================================================
+message AuditInfo {
+    string correlation_id = 1;           // ID único de la transacción
+    string initiated_by = 2;             // User ID que inició la operación
+    string ip_address = 3;               // IP del cliente
+    string user_agent = 4;               // User agent del cliente
+    google.protobuf.Timestamp timestamp = 5;  // Momento de la operación
+}
+
+// ============================================================
+// Paginación
+// ============================================================
+message PageRequest {
+    int32 page = 1;       // Número de página (0-based)
+    int32 size = 2;       // Elementos por página (max 100)
+    string sort_by = 3;   // Campo para ordenar
+    bool descending = 4;  // Orden descendente
+}
+
+message PageInfo {
+    int32 current_page = 1;
+    int32 page_size = 2;
+    int64 total_elements = 3;
+    int32 total_pages = 4;
+    bool has_next = 5;
+    bool has_previous = 6;
+}

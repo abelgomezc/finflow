@@ -1,0 +1,42 @@
+# ============================================================
+# FinFlow Audit - Configuración para Tests
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  flyway:
+    enabled: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: finflow-audit-group-test
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+logging:
+  level:
+    root: WARN
+    ec.com.finflow: DEBUG
+
+finflow:
+  audit:
+    topics:
+      transfers-initiated: finflow.transfers.initiated.test
+      transfers-completed: finflow.transfers.completed.test
+      transfers-failed: finflow.transfers.failed.test
+      transfers-reversed: finflow.transfers.reversed.test
+      accounts-blocked: finflow.accounts.blocked.test
+      accounts-debited: finflow.accounts.debited.test
+      accounts-credited: finflow.accounts.credited.test

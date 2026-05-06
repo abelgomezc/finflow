@@ -1,0 +1,46 @@
+# ============================================================
+# FinFlow Transfers - Configuración para Tests
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  flyway:
+    enabled: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+grpc:
+  client:
+    finflow-accounts:
+      address: static://localhost:9081
+      negotiation-type: plaintext
+    finflow-validation:
+      address: static://localhost:9083
+      negotiation-type: plaintext
+
+logging:
+  level:
+    root: WARN
+    ec.com.finflow: DEBUG
+
+finflow:
+  transfers:
+    topics:
+      initiated: finflow.transfers.initiated.test
+      completed: finflow.transfers.completed.test
+      failed: finflow.transfers.failed.test
+      reversed: finflow.transfers.reversed.test

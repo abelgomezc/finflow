@@ -1,0 +1,30 @@
+# ============================================================
+# FinFlow Accounts - Configuración para Tests
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false  # Deshabilitado para tests con H2
+
+grpc:
+  server:
+    port: 0  # Puerto aleatorio para tests
+
+logging:
+  level:
+    root: WARN
+    ec.com.finflow: DEBUG

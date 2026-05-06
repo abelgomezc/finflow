@@ -1,0 +1,49 @@
+# ============================================================
+# FinFlow Notifications - Configuración para Tests
+# ============================================================
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  flyway:
+    enabled: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: finflow-notifications-group-test
+      auto-offset-reset: earliest
+
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+
+logging:
+  level:
+    root: WARN
+    ec.com.finflow: DEBUG
+
+finflow:
+  notifications:
+    topics:
+      transfers-initiated: finflow.transfers.initiated.test
+      transfers-completed: finflow.transfers.completed.test
+      transfers-failed: finflow.transfers.failed.test
+      transfers-reversed: finflow.transfers.reversed.test
+    email:
+      from: FinFlow Test <test@finflow.ec>
+      enabled: false
+      retry:
+        max-attempts: 3
+        delay-ms: 1000

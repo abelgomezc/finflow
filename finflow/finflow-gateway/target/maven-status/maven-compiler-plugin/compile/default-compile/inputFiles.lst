@@ -1,0 +1,14 @@
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/FinflowGatewayApplication.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/JwtAuthenticationFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/CorrelationIdFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/LoggingFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/RateLimitingFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/controller/HealthController.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/config/GatewayConfig.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/CorsWebFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/controller/FallbackController.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/filter/ResponseBodyFilter.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/dto/request/LoginRequest.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/dto/response/AuthResponse.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/security/JwtUtil.java
+/home/uservdi/Repositories/finflow/finflow/finflow-gateway/src/main/java/ec/com/finflow/gateway/controller/AuthController.java

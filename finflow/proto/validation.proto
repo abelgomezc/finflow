@@ -1,0 +1,352 @@
+// ============================================================
+// FinFlow - Servicio de Validación y Anti-Fraude (gRPC)
+// Valida transferencias antes de procesarlas
+// ============================================================
+
+syntax = "proto3";
+
+package finflow.validation;
+
+option java_multiple_files = true;
+option java_package = "ec.com.finflow.grpc.validation";
+option java_outer_classname = "ValidationProto";
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+// ============================================================
+// SERVICIO DE VALIDACIÓN
+// ============================================================
+service ValidationService {
+
+    // --------------------------------------------------------
+    // Validación Principal
+    // --------------------------------------------------------
+
+    // Valida una transferencia completa (cuenta, saldo, fraude)
+    // Este es el método principal llamado por finflow-transfers
+    rpc ValidateTransfer(ValidateTransferRequest) returns (ValidationResult);
+
+    // Validación rápida solo de cuentas (sin análisis de fraude)
+    rpc ValidateAccounts(ValidateAccountsRequest) returns (ValidateAccountsResponse);
+
+    // --------------------------------------------------------
+    // Análisis de Fraude
+    // --------------------------------------------------------
+
+    // Calcula el fraud score sin rechazar
+    // Útil para análisis y reportes
+    rpc CalculateFraudScore(FraudScoreRequest) returns (FraudScoreResponse);
+
+    // Obtiene el perfil de transferencias de un usuario
+    rpc GetUserTransferProfile(GetUserProfileRequest) returns (UserTransferProfile);
+
+    // --------------------------------------------------------
+    // Gestión de Lista Negra
+    // --------------------------------------------------------
+
+    // Agrega una cuenta a la lista negra
+    rpc AddToBlacklist(BlacklistRequest) returns (BlacklistResponse);
+
+    // Remueve una cuenta de la lista negra
+    rpc RemoveFromBlacklist(RemoveBlacklistRequest) returns (BlacklistResponse);
+
+    // Verifica si una cuenta está en lista negra
+    rpc CheckBlacklist(CheckBlacklistRequest) returns (CheckBlacklistResponse);
+
+    // --------------------------------------------------------
+    // Historial de Validaciones
+    // --------------------------------------------------------
+
+    // Obtiene el historial de validaciones
+    rpc GetValidationHistory(ValidationHistoryRequest) returns (ValidationHistoryResponse);
+
+    // Obtiene detalles de una validación específica
+    rpc GetValidationDetails(GetValidationDetailsRequest) returns (ValidationDetails);
+}
+
+// ============================================================
+// VALIDACIÓN DE TRANSFERENCIA
+// ============================================================
+
+message ValidateTransferRequest {
+    // Información de la transferencia
+    string transfer_id = 1;              // UUID de la transferencia
+    string source_account_id = 2;        // Cuenta origen
+    string target_account_id = 3;        // Cuenta destino
+    finflow.common.Money amount = 4;     // Monto a transferir
+
+    // Información del usuario
+    string user_id = 5;                  // Usuario que inicia
+    string ip_address = 6;               // IP del cliente
+    string user_agent = 7;               // Browser/App
+    string device_fingerprint = 8;       // Huella del dispositivo
+
+    // Contexto adicional
+    google.protobuf.Timestamp initiated_at = 9;
+    string description = 10;             // Descripción de la transferencia
+
+    // Opciones de validación
+    bool skip_fraud_check = 11;          // Para transferencias internas/privilegiadas
+    int32 max_fraud_score_allowed = 12;  // Override del umbral (default: 70)
+}
+
+message ValidationResult {
+    string validation_id = 1;            // UUID de esta validación
+    string transfer_id = 2;
+
+    // Resultado principal
+    bool approved = 3;
+    finflow.common.RejectionReason rejection_reason = 4;
+    string rejection_message = 5;        // Mensaje legible
+
+    // Análisis de fraude
+    int32 fraud_score = 6;               // 0-100 (>= 70 es sospechoso)
+    repeated FraudIndicator fraud_indicators = 7;
+
+    // Información de cuentas validadas
+    AccountValidationInfo source_account = 8;
+    AccountValidationInfo target_account = 9;
+
+    // Información de límites
+    LimitCheckResult limit_check = 10;
+
+    // Metadata
+    int64 validation_time_ms = 11;       // Tiempo de procesamiento
+    google.protobuf.Timestamp validated_at = 12;
+
+    bool success = 13;                   // Éxito técnico (no confundir con approved)
+    finflow.common.ErrorDetail error = 14;
+}
+
+message AccountValidationInfo {
+    string account_id = 1;
+    bool exists = 2;
+    bool is_active = 3;
+    finflow.common.AccountStatus status = 4;
+    bool is_blacklisted = 5;
+    string blacklist_reason = 6;
+    finflow.common.Money available_balance = 7;  // Solo para cuenta origen
+}
+
+message LimitCheckResult {
+    // Límite por transferencia
+    finflow.common.Money per_transfer_limit = 1;
+    bool per_transfer_ok = 2;
+
+    // Límite diario
+    finflow.common.Money daily_limit = 3;
+    finflow.common.Money daily_used = 4;
+    finflow.common.Money daily_remaining = 5;
+    bool daily_limit_ok = 6;
+
+    // Límite de frecuencia
+    int32 max_transfers_per_hour = 7;
+    int32 transfers_last_hour = 8;
+    bool frequency_ok = 9;
+}
+
+message FraudIndicator {
+    string code = 1;          // Código del indicador
+    string description = 2;   // Descripción
+    int32 score_impact = 3;   // Cuántos puntos suma al fraud score
+    string severity = 4;      // LOW, MEDIUM, HIGH, CRITICAL
+
+    // Datos adicionales del indicador
+    map<string, string> details = 5;
+}
+
+// ============================================================
+// VALIDACIÓN DE CUENTAS (RÁPIDA)
+// ============================================================
+
+message ValidateAccountsRequest {
+    string source_account_id = 1;
+    string target_account_id = 2;
+    bool check_blacklist = 3;  // Si incluir verificación de lista negra
+}
+
+message ValidateAccountsResponse {
+    AccountValidationInfo source_account = 1;
+    AccountValidationInfo target_account = 2;
+    bool both_valid = 3;  // Atajo: ambas existen y están activas
+
+    bool success = 4;
+    finflow.common.ErrorDetail error = 5;
+}
+
+// ============================================================
+// ANÁLISIS DE FRAUDE
+// ============================================================
+
+message FraudScoreRequest {
+    string user_id = 1;
+    string source_account_id = 2;
+    string target_account_id = 3;
+    finflow.common.Money amount = 4;
+    google.protobuf.Timestamp transfer_time = 5;
+    string ip_address = 6;
+    string device_fingerprint = 7;
+}
+
+message FraudScoreResponse {
+    int32 total_score = 1;  // 0-100
+    string risk_level = 2;  // LOW (0-30), MEDIUM (31-50), HIGH (51-70), CRITICAL (>70)
+    repeated FraudIndicator indicators = 3;
+
+    // Comparación con perfil histórico
+    UserTransferProfile user_profile = 4;
+
+    bool success = 5;
+    finflow.common.ErrorDetail error = 6;
+}
+
+message GetUserProfileRequest {
+    string user_id = 1;
+}
+
+message UserTransferProfile {
+    string user_id = 1;
+
+    // Estadísticas históricas
+    finflow.common.Money average_transfer_amount = 2;
+    finflow.common.Money max_transfer_amount = 3;
+    int32 total_transfers_count = 4;
+    int32 transfers_last_30_days = 5;
+
+    // Patrones de tiempo
+    repeated int32 usual_hours = 6;  // Horas habituales (0-23)
+    repeated string usual_days = 7;  // Días habituales (MON, TUE, etc.)
+
+    // Cuentas frecuentes
+    repeated string frequent_target_accounts = 8;
+
+    // Indicadores de riesgo
+    int32 failed_transfers_last_30_days = 9;
+    int32 fraud_alerts_count = 10;
+    google.protobuf.Timestamp last_fraud_alert = 11;
+
+    // Metadata
+    google.protobuf.Timestamp profile_updated_at = 12;
+    bool has_sufficient_history = 13;  // >= 10 transferencias
+}
+
+// ============================================================
+// GESTIÓN DE LISTA NEGRA
+// ============================================================
+
+message BlacklistRequest {
+    string account_id = 1;
+    string reason = 2;              // Motivo del bloqueo
+    string reported_by = 3;         // Usuario que reporta
+    google.protobuf.Timestamp expires_at = 4;  // Opcional: bloqueo temporal
+
+    // Metadata adicional
+    map<string, string> evidence = 5;  // Evidencia del fraude
+}
+
+message RemoveBlacklistRequest {
+    string account_id = 1;
+    string reason = 2;              // Motivo de remoción
+    string authorized_by = 3;       // Usuario que autoriza
+}
+
+message BlacklistResponse {
+    string account_id = 1;
+    bool is_blacklisted = 2;
+    string blacklist_id = 3;        // ID del registro en lista negra
+
+    bool success = 4;
+    finflow.common.ErrorDetail error = 5;
+}
+
+message CheckBlacklistRequest {
+    string account_id = 1;
+}
+
+message CheckBlacklistResponse {
+    string account_id = 1;
+    bool is_blacklisted = 2;
+    string reason = 3;
+    google.protobuf.Timestamp blacklisted_at = 4;
+    google.protobuf.Timestamp expires_at = 5;  // null si es permanente
+
+    bool success = 6;
+    finflow.common.ErrorDetail error = 7;
+}
+
+// ============================================================
+// HISTORIAL DE VALIDACIONES
+// ============================================================
+
+message ValidationHistoryRequest {
+    // Filtros
+    string user_id = 1;
+    string account_id = 2;          // Origen o destino
+    bool approved_only = 3;
+    bool rejected_only = 4;
+    google.protobuf.Timestamp from_date = 5;
+    google.protobuf.Timestamp to_date = 6;
+
+    // Paginación
+    finflow.common.PageRequest page = 7;
+}
+
+message ValidationHistoryResponse {
+    repeated ValidationSummary validations = 1;
+    finflow.common.PageInfo page_info = 2;
+
+    // Estadísticas del período
+    int32 total_approved = 3;
+    int32 total_rejected = 4;
+    int32 avg_fraud_score = 5;
+
+    bool success = 6;
+    finflow.common.ErrorDetail error = 7;
+}
+
+message ValidationSummary {
+    string validation_id = 1;
+    string transfer_id = 2;
+    string source_account_id = 3;
+    string target_account_id = 4;
+    finflow.common.Money amount = 5;
+    bool approved = 6;
+    finflow.common.RejectionReason rejection_reason = 7;
+    int32 fraud_score = 8;
+    google.protobuf.Timestamp validated_at = 9;
+}
+
+message GetValidationDetailsRequest {
+    string validation_id = 1;
+}
+
+message ValidationDetails {
+    string validation_id = 1;
+    string transfer_id = 2;
+
+    // Request original
+    ValidateTransferRequest original_request = 3;
+
+    // Resultado completo
+    ValidationResult result = 4;
+
+    // Detalle de cada regla evaluada
+    repeated RuleEvaluation rules_evaluated = 5;
+
+    // Tiempos de procesamiento
+    int64 account_validation_ms = 6;
+    int64 balance_check_ms = 7;
+    int64 fraud_analysis_ms = 8;
+    int64 total_time_ms = 9;
+}
+
+message RuleEvaluation {
+    string rule_id = 1;
+    string rule_name = 2;
+    string rule_description = 3;
+    bool passed = 4;
+    string failure_reason = 5;
+    int32 score_impact = 6;
+    int64 evaluation_time_ms = 7;
+}

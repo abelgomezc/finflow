@@ -1,0 +1,294 @@
+// ============================================================
+// FinFlow - Servicio de Cuentas (gRPC)
+// Operaciones: consulta, bloqueo de montos, débito, crédito
+// ============================================================
+
+syntax = "proto3";
+
+package finflow.accounts;
+
+option java_multiple_files = true;
+option java_package = "ec.com.finflow.grpc.accounts";
+option java_outer_classname = "AccountsProto";
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+// ============================================================
+// SERVICIO PRINCIPAL DE CUENTAS
+// ============================================================
+service AccountService {
+
+    // --------------------------------------------------------
+    // Consultas
+    // --------------------------------------------------------
+
+    // Obtiene información completa de una cuenta
+    rpc GetAccount(GetAccountRequest) returns (AccountResponse);
+
+    // Obtiene el balance de una cuenta (total y disponible)
+    rpc GetBalance(GetBalanceRequest) returns (BalanceResponse);
+
+    // Verifica si una cuenta existe y está activa
+    rpc ValidateAccount(ValidateAccountRequest) returns (ValidateAccountResponse);
+
+    // --------------------------------------------------------
+    // Operaciones de Bloqueo (para el patrón Saga)
+    // --------------------------------------------------------
+
+    // Bloquea (reserva) un monto sin debitarlo
+    // Usado antes de iniciar una transferencia
+    rpc BlockAmount(BlockAmountRequest) returns (BlockResponse);
+
+    // Libera un bloqueo sin ejecutar el débito
+    // Usado si la transferencia se cancela antes de procesarse
+    rpc ReleaseBlock(ReleaseBlockRequest) returns (ReleaseResponse);
+
+    // --------------------------------------------------------
+    // Operaciones Financieras
+    // --------------------------------------------------------
+
+    // Ejecuta un débito usando un bloqueo previo
+    // Convierte el monto bloqueado en débito real
+    rpc ExecuteBlockedDebit(ExecuteBlockedDebitRequest) returns (TransactionResponse);
+
+    // Ejecuta un débito directo (sin bloqueo previo)
+    // Usado para casos especiales o reversiones
+    rpc ExecuteDebit(ExecuteDebitRequest) returns (TransactionResponse);
+
+    // Ejecuta un crédito (acredita fondos a una cuenta)
+    rpc ExecuteCredit(ExecuteCreditRequest) returns (TransactionResponse);
+
+    // Revierte un débito previo (compensating transaction)
+    // Usado si el crédito falla después del débito
+    rpc ReverseDebit(ReverseDebitRequest) returns (TransactionResponse);
+
+    // --------------------------------------------------------
+    // Consultas de Historial
+    // --------------------------------------------------------
+
+    // Obtiene el total transferido en un día (para validar límites)
+    rpc GetDailyTransferTotal(GetDailyTransferTotalRequest) returns (DailyTransferTotalResponse);
+
+    // Cuenta transferencias en las últimas N horas
+    rpc CountRecentTransfers(CountRecentTransfersRequest) returns (CountRecentTransfersResponse);
+}
+
+// ============================================================
+// MENSAJES DE CONSULTA
+// ============================================================
+
+message GetAccountRequest {
+    string account_id = 1;  // UUID de la cuenta
+}
+
+message AccountResponse {
+    string account_id = 1;
+    string account_number = 2;          // Número visible (ej: "1234567890")
+    string customer_id = 3;
+    string customer_name = 4;
+    finflow.common.AccountType account_type = 5;
+    finflow.common.AccountStatus status = 6;
+    finflow.common.Currency currency = 7;
+
+    // Saldos
+    finflow.common.Money current_balance = 8;      // Saldo total
+    finflow.common.Money available_balance = 9;    // Saldo - bloqueados
+    finflow.common.Money blocked_amount = 10;      // Total bloqueado
+
+    // Límites
+    finflow.common.Money daily_transfer_limit = 11;
+    finflow.common.Money per_transfer_limit = 12;
+
+    // Metadata
+    google.protobuf.Timestamp created_at = 13;
+    google.protobuf.Timestamp updated_at = 14;
+
+    // Estado de la respuesta
+    bool success = 15;
+    finflow.common.ErrorDetail error = 16;
+}
+
+message GetBalanceRequest {
+    string account_id = 1;
+}
+
+message BalanceResponse {
+    string account_id = 1;
+    finflow.common.Money current_balance = 2;
+    finflow.common.Money available_balance = 3;
+    finflow.common.Money blocked_amount = 4;
+    google.protobuf.Timestamp as_of = 5;  // Momento del balance
+
+    bool success = 6;
+    finflow.common.ErrorDetail error = 7;
+}
+
+message ValidateAccountRequest {
+    string account_id = 1;
+    // Opcional: validar por número de cuenta en lugar de ID
+    string account_number = 2;
+}
+
+message ValidateAccountResponse {
+    bool exists = 1;
+    bool is_active = 2;
+    finflow.common.AccountStatus status = 3;
+    string account_id = 4;  // Devuelve el ID si se buscó por número
+
+    bool success = 5;
+    finflow.common.ErrorDetail error = 6;
+}
+
+// ============================================================
+// MENSAJES DE BLOQUEO
+// ============================================================
+
+message BlockAmountRequest {
+    string account_id = 1;
+    finflow.common.Money amount = 2;
+    string block_reference = 3;  // ID único del bloqueo (transfer_id)
+    string reason = 4;           // Descripción del bloqueo
+
+    // Tiempo de expiración del bloqueo (auto-libera si no se usa)
+    int32 expiration_minutes = 5;  // Default: 15 minutos
+
+    finflow.common.AuditInfo audit = 6;
+}
+
+message BlockResponse {
+    string block_id = 1;         // UUID del bloqueo creado
+    string account_id = 2;
+    finflow.common.Money blocked_amount = 3;
+    finflow.common.Money new_available_balance = 4;
+    google.protobuf.Timestamp expires_at = 5;
+
+    bool success = 6;
+    finflow.common.ErrorDetail error = 7;
+}
+
+message ReleaseBlockRequest {
+    string block_id = 1;
+    string reason = 2;  // Por qué se libera (cancelación, timeout, etc.)
+    finflow.common.AuditInfo audit = 3;
+}
+
+message ReleaseResponse {
+    string block_id = 1;
+    string account_id = 2;
+    finflow.common.Money released_amount = 3;
+    finflow.common.Money new_available_balance = 4;
+
+    bool success = 5;
+    finflow.common.ErrorDetail error = 6;
+}
+
+// ============================================================
+// MENSAJES DE OPERACIONES FINANCIERAS
+// ============================================================
+
+message ExecuteBlockedDebitRequest {
+    string block_id = 1;          // Bloqueo a convertir en débito
+    string transfer_id = 2;       // Referencia de la transferencia
+    string description = 3;       // Descripción para el movimiento
+    finflow.common.AuditInfo audit = 4;
+}
+
+message ExecuteDebitRequest {
+    string account_id = 1;
+    finflow.common.Money amount = 2;
+    string transfer_id = 3;       // Referencia de la transferencia
+    string description = 4;
+
+    // Idempotency key para evitar débitos duplicados
+    string idempotency_key = 5;
+
+    finflow.common.AuditInfo audit = 6;
+}
+
+message ExecuteCreditRequest {
+    string account_id = 1;
+    finflow.common.Money amount = 2;
+    string transfer_id = 3;
+    string description = 4;
+
+    // Cuenta origen (para referencia)
+    string source_account_id = 5;
+
+    string idempotency_key = 6;
+    finflow.common.AuditInfo audit = 7;
+}
+
+message ReverseDebitRequest {
+    string original_transaction_id = 1;  // ID de la transacción a revertir
+    string transfer_id = 2;              // Transferencia que se está revirtiendo
+    string reason = 3;                   // Motivo de la reversión
+    finflow.common.AuditInfo audit = 4;
+}
+
+message TransactionResponse {
+    string transaction_id = 1;      // UUID de la transacción creada
+    string account_id = 2;
+    string transfer_id = 3;
+
+    // Tipo de operación realizada
+    enum TransactionType {
+        TRANSACTION_TYPE_UNSPECIFIED = 0;
+        DEBIT = 1;
+        CREDIT = 2;
+        BLOCK = 3;
+        RELEASE = 4;
+        REVERSAL = 5;
+    }
+    TransactionType type = 4;
+
+    finflow.common.Money amount = 5;
+    finflow.common.Money balance_before = 6;
+    finflow.common.Money balance_after = 7;
+
+    google.protobuf.Timestamp executed_at = 8;
+
+    bool success = 9;
+    finflow.common.ErrorDetail error = 10;
+
+    // Si fue duplicado (idempotency), indica el ID original
+    bool was_duplicate = 11;
+    string original_transaction_id = 12;
+}
+
+// ============================================================
+// MENSAJES DE CONSULTAS DE HISTORIAL
+// ============================================================
+
+message GetDailyTransferTotalRequest {
+    string account_id = 1;
+    // Fecha a consultar (si no se especifica, es hoy)
+    google.protobuf.Timestamp date = 2;
+}
+
+message DailyTransferTotalResponse {
+    string account_id = 1;
+    google.protobuf.Timestamp date = 2;
+    finflow.common.Money total_transferred = 3;
+    int32 transfer_count = 4;
+    finflow.common.Money daily_limit = 5;
+    finflow.common.Money remaining_limit = 6;
+
+    bool success = 7;
+    finflow.common.ErrorDetail error = 8;
+}
+
+message CountRecentTransfersRequest {
+    string account_id = 1;
+    int32 hours = 2;  // Últimas N horas (default: 1)
+}
+
+message CountRecentTransfersResponse {
+    string account_id = 1;
+    int32 hours_checked = 2;
+    int32 transfer_count = 3;
+    finflow.common.Money total_amount = 4;
+
+    bool success = 5;
+    finflow.common.ErrorDetail error = 6;
+}

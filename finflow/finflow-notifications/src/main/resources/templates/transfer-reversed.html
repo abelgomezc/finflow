@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transferencia Reversada - FinFlow</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0; }
+        .details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
+        .detail-label { color: #64748b; }
+        .detail-value { font-weight: bold; }
+        .amount { font-size: 24px; color: #f59e0b; text-align: center; margin: 20px 0; }
+        .status { background: #fef3c7; color: #92400e; padding: 10px 20px; border-radius: 20px; display: inline-block; }
+        .info-box { background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .info-title { color: #92400e; font-weight: bold; margin-bottom: 5px; }
+        .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FinFlow</h1>
+        <p>Transferencia Reversada</p>
+    </div>
+    <div class="content">
+        <p>Estimado usuario,</p>
+        <p>Le informamos que una transferencia ha sido reversada. Los fondos han sido devueltos a la cuenta de origen.</p>
+
+        <div class="amount">
+            <span th:text="${currency}">USD</span> <span th:text="${amount}">0.00</span>
+        </div>
+
+        <p style="text-align: center;">
+            <span class="status">Reversada</span>
+        </p>
+
+        <div class="info-box">
+            <div class="info-title">Motivo de la reversión:</div>
+            <div th:text="${reversalReason}">Reversión solicitada</div>
+        </div>
+
+        <div class="details">
+            <div class="detail-row">
+                <span class="detail-label">Referencia Original:</span>
+                <span class="detail-value" th:text="${referenceNumber}">REF-123</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Cuenta Origen:</span>
+                <span class="detail-value" th:text="${sourceAccountId}">***1234</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Cuenta Destino:</span>
+                <span class="detail-value" th:text="${targetAccountId}">***5678</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Fecha/Hora:</span>
+                <span class="detail-value" th:text="${timestamp}">01/01/2024 12:00:00</span>
+            </div>
+        </div>
+
+        <p>Si tiene alguna pregunta sobre esta reversión, por favor contacte a nuestro centro de atención al cliente.</p>
+    </div>
+    <div class="footer">
+        <p>Este es un correo automático, por favor no responda a este mensaje.</p>
+        <p>&copy; 2024 FinFlow. Todos los derechos reservados.</p>
+    </div>
+</body>
+</html>

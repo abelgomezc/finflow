@@ -1,0 +1,560 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================
+   VARIABLES NEUMORPHISM - MODO CLARO
+   =========================== */
+:root {
+  --neu-bg: #e0e5ec;
+  --neu-shadow-dark: #b8bec7;
+  --neu-shadow-light: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  /* Colores de acento - por defecto USER (teal) */
+  --accent-50: #f0fdfa;
+  --accent-100: #ccfbf1;
+  --accent-200: #99f6e4;
+  --accent-500: #14b8a6;
+  --accent-600: #0d9488;
+  --accent-700: #0f766e;
+}
+
+/* ===========================
+   VARIABLES NEUMORPHISM - MODO OSCURO
+   =========================== */
+.dark {
+  --neu-bg: #2d3748;
+  --neu-shadow-dark: #1a202c;
+  --neu-shadow-light: #4a5568;
+  --text-primary: #f7fafc;
+  --text-secondary: #cbd5e0;
+  --text-muted: #a0aec0;
+}
+
+/* Cuando el usuario es ADMIN */
+.theme-admin {
+  --accent-50: #faf5ff;
+  --accent-100: #f3e8ff;
+  --accent-200: #e9d5ff;
+  --accent-500: #a855f7;
+  --accent-600: #9333ea;
+  --accent-700: #7e22ce;
+}
+
+/* ===========================
+   ESTILOS BASE
+   =========================== */
+body {
+  color: var(--text-primary);
+  background-color: var(--neu-bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===========================
+   BOTONES NEUMORPHISM
+   =========================== */
+.btn-primary {
+  @apply px-6 py-3 rounded-2xl font-medium transition-all duration-200;
+  background-color: var(--neu-bg);
+  color: var(--accent-600);
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.btn-primary:hover {
+  box-shadow: 8px 8px 16px var(--neu-shadow-dark),
+              -8px -8px 16px var(--neu-shadow-light);
+}
+
+.btn-primary:active,
+.btn-primary:focus {
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+              inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+.btn-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 rounded-2xl font-medium transition-all duration-200;
+  background-color: var(--neu-bg);
+  color: var(--text-secondary);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+.btn-secondary:hover {
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.btn-secondary:active {
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark),
+              inset -3px -3px 6px var(--neu-shadow-light);
+}
+
+.btn-secondary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Boton con acento de color */
+.btn-accent {
+  @apply px-6 py-3 rounded-2xl font-medium text-white transition-all duration-200;
+  background: linear-gradient(145deg, var(--accent-500), var(--accent-600));
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.btn-accent:hover {
+  background: linear-gradient(145deg, var(--accent-600), var(--accent-700));
+  box-shadow: 8px 8px 16px var(--neu-shadow-dark),
+              -8px -8px 16px var(--neu-shadow-light);
+}
+
+.btn-accent:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Boton peligro */
+.btn-danger {
+  @apply px-6 py-3 rounded-2xl font-medium text-white transition-all duration-200;
+  background: linear-gradient(145deg, #ef4444, #dc2626);
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(145deg, #dc2626, #b91c1c);
+}
+
+/* ===========================
+   INPUTS NEUMORPHISM (HUNDIDOS)
+   =========================== */
+.input {
+  @apply block w-full rounded-xl px-4 py-3
+         focus:outline-none focus:ring-2 transition-all duration-200;
+  background-color: var(--neu-bg);
+  color: var(--text-primary);
+  border: none;
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+              inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+.input:focus {
+  box-shadow: inset 6px 6px 12px var(--neu-shadow-dark),
+              inset -6px -6px 12px var(--neu-shadow-light);
+  --tw-ring-color: var(--accent-500);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Select con estilo neumorphism */
+select.input {
+  @apply cursor-pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+textarea.input {
+  @apply resize-none;
+}
+
+/* ===========================
+   CARDS NEUMORPHISM (ELEVADAS)
+   =========================== */
+.card {
+  @apply rounded-3xl p-6 transition-all duration-200;
+  background-color: var(--neu-bg);
+  box-shadow: 8px 8px 16px var(--neu-shadow-dark),
+              -8px -8px 16px var(--neu-shadow-light);
+}
+
+.card:hover {
+  box-shadow: 10px 10px 20px var(--neu-shadow-dark),
+              -10px -10px 20px var(--neu-shadow-light);
+}
+
+.card-sm {
+  @apply rounded-2xl p-4;
+  background-color: var(--neu-bg);
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.card-inset {
+  @apply rounded-2xl p-4;
+  background-color: var(--neu-bg);
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+              inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+/* ===========================
+   SIDEBAR NEUMORPHISM
+   =========================== */
+.sidebar {
+  @apply fixed inset-y-0 left-0 w-64 p-4 flex flex-col;
+  background-color: var(--neu-bg);
+  box-shadow: 4px 0 16px var(--neu-shadow-dark);
+}
+
+.sidebar-item {
+  @apply flex items-center px-4 py-3 rounded-xl font-medium
+         transition-all duration-200 mb-2;
+  color: var(--text-secondary);
+  background-color: transparent;
+}
+
+.sidebar-item:hover {
+  background-color: var(--neu-bg);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+.sidebar-item.active {
+  background-color: var(--neu-bg);
+  color: var(--accent-600);
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark),
+              inset -3px -3px 6px var(--neu-shadow-light);
+}
+
+/* ===========================
+   BADGES Y TAGS
+   =========================== */
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-xl text-sm font-medium;
+  background-color: var(--neu-bg);
+  color: var(--text-secondary);
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+.badge-accent {
+  @apply inline-flex items-center px-3 py-1 rounded-xl text-sm font-medium;
+  background: linear-gradient(145deg, var(--accent-100), var(--accent-50));
+  color: var(--accent-700);
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+.badge-success {
+  @apply inline-flex items-center px-3 py-1 rounded-xl text-sm font-medium;
+  background: linear-gradient(145deg, #d1fae5, #ecfdf5);
+  color: #065f46;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+.badge-danger {
+  @apply inline-flex items-center px-3 py-1 rounded-xl text-sm font-medium;
+  background: linear-gradient(145deg, #fee2e2, #fef2f2);
+  color: #991b1b;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+.badge-warning {
+  @apply inline-flex items-center px-3 py-1 rounded-xl text-sm font-medium;
+  background: linear-gradient(145deg, #fef3c7, #fffbeb);
+  color: #92400e;
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+/* ===========================
+   ICONOS NEUMORPHISM
+   =========================== */
+.icon-container {
+  @apply p-3 rounded-xl;
+  background-color: var(--neu-bg);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+.icon-container-sm {
+  @apply p-2 rounded-lg;
+  background-color: var(--neu-bg);
+  box-shadow: 3px 3px 6px var(--neu-shadow-dark),
+              -3px -3px 6px var(--neu-shadow-light);
+}
+
+.icon-container-accent {
+  @apply p-3 rounded-xl;
+  background: linear-gradient(145deg, var(--accent-100), var(--accent-50));
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+/* ===========================
+   TABLAS NEUMORPHISM
+   =========================== */
+.table-neumorphism {
+  @apply w-full rounded-2xl overflow-hidden;
+  background-color: var(--neu-bg);
+  box-shadow: 8px 8px 16px var(--neu-shadow-dark),
+              -8px -8px 16px var(--neu-shadow-light);
+}
+
+.table-neumorphism thead {
+  background-color: var(--neu-bg);
+  box-shadow: inset 0 -2px 4px var(--neu-shadow-dark);
+}
+
+.table-neumorphism th {
+  @apply px-6 py-4 text-left text-sm font-semibold;
+  color: var(--text-primary);
+}
+
+.table-neumorphism td {
+  @apply px-6 py-4 text-sm;
+  color: var(--text-secondary);
+}
+
+.table-neumorphism tbody tr {
+  @apply transition-all duration-200;
+}
+
+.table-neumorphism tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ===========================
+   MODALES NEUMORPHISM
+   =========================== */
+.modal-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  @apply rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto;
+  background-color: var(--neu-bg);
+  box-shadow: 12px 12px 24px var(--neu-shadow-dark),
+              -12px -12px 24px var(--neu-shadow-light);
+}
+
+/* ===========================
+   UTILIDADES ADICIONALES
+   =========================== */
+.divider {
+  @apply my-4;
+  height: 2px;
+  background: linear-gradient(to right, var(--neu-shadow-dark), var(--neu-shadow-light), var(--neu-shadow-dark));
+}
+
+.progress-container {
+  @apply h-2 rounded-full;
+  background-color: var(--neu-bg);
+  box-shadow: inset 2px 2px 4px var(--neu-shadow-dark),
+              inset -2px -2px 4px var(--neu-shadow-light);
+}
+
+.progress-bar {
+  @apply h-full rounded-full;
+  background: linear-gradient(90deg, var(--accent-400), var(--accent-600));
+}
+
+/* ===========================
+   TABS NEUMORPHISM
+   =========================== */
+.tab-group {
+  @apply flex gap-2 p-2 rounded-2xl;
+  background-color: var(--neu-bg);
+  box-shadow: inset 4px 4px 8px var(--neu-shadow-dark),
+              inset -4px -4px 8px var(--neu-shadow-light);
+}
+
+.tab-item {
+  @apply px-4 py-2 rounded-xl font-medium transition-all duration-200;
+  color: var(--text-muted);
+}
+
+.tab-item:hover {
+  color: var(--text-primary);
+}
+
+.tab-item.active {
+  color: var(--accent-600);
+  background-color: var(--neu-bg);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+/* ===========================
+   STATS CARD
+   =========================== */
+.stats-card {
+  @apply rounded-2xl p-5 transition-all duration-200;
+  background-color: var(--neu-bg);
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.stats-card:hover {
+  box-shadow: 8px 8px 16px var(--neu-shadow-dark),
+              -8px -8px 16px var(--neu-shadow-light);
+}
+
+/* ===========================
+   AVATAR
+   =========================== */
+.avatar-container {
+  @apply rounded-full p-1;
+  background-color: var(--neu-bg);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+/* ===========================
+   SCROLLBAR
+   =========================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--neu-bg);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neu-shadow-dark);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ===========================
+   TOGGLE THEME BUTTON
+   =========================== */
+.theme-toggle {
+  @apply p-3 rounded-xl cursor-pointer transition-all duration-300;
+  background-color: var(--neu-bg);
+  box-shadow: 4px 4px 8px var(--neu-shadow-dark),
+              -4px -4px 8px var(--neu-shadow-light);
+}
+
+.theme-toggle:hover {
+  box-shadow: 6px 6px 12px var(--neu-shadow-dark),
+              -6px -6px 12px var(--neu-shadow-light);
+}
+
+.theme-toggle:active {
+  box-shadow: inset 3px 3px 6px var(--neu-shadow-dark),
+              inset -3px -3px 6px var(--neu-shadow-light);
+}
+
+/* ===========================
+   FONDO ANIMADO FINANZAS
+   =========================== */
+.finance-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.finance-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    var(--accent-600) 0%,
+    var(--accent-700) 25%,
+    #1a365d 50%,
+    var(--accent-700) 75%,
+    var(--accent-600) 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Lineas de flujo de dinero */
+.flow-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: flowMove 3s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes flowMove {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+/* Circulos flotantes (monedas) */
+.floating-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.2);
+  animation: floatUp 8s ease-in-out infinite;
+}
+
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
+}
+
+/* Grid de datos */
+.data-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridPulse 4s ease-in-out infinite;
+}
+
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* Particulas de transferencia */
+.transfer-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+  animation: particleFlow 4s linear infinite;
+}
+
+@keyframes particleFlow {
+  0% { transform: translateX(-10px) translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 10px)) translateY(-20px); opacity: 0; }
+}

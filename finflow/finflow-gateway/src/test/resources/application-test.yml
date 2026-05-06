@@ -1,0 +1,31 @@
+# ============================================================
+# FinFlow Gateway - Configuración para Tests
+# ============================================================
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: finflow-gateway-test
+
+  cloud:
+    gateway:
+      routes: []
+
+logging:
+  level:
+    root: WARN
+    ec.com.finflow: DEBUG
+
+finflow:
+  gateway:
+    jwt:
+      secret: test-secret-key-for-jwt-authentication-minimum-256-bits-required
+      expiration: 3600000
+      issuer: finflow-gateway-test
+    security:
+      public-paths:
+        - /api/v1/auth/**
+        - /actuator/health
+        - /fallback/**
